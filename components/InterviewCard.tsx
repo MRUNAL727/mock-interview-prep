@@ -17,7 +17,7 @@ const InterviewCard = ({
   const feedback = null as Feedback | null;
   const normalizedType = /mix/gi.test(type) ? "Mixed" : type;
   const formattedDate = dayjs(
-    feedback?.createdAt || createdAt || new Date.now(),
+    feedback?.createdAt || createdAt,
   ).format("MMM D, YYYY");
 
   return (
@@ -61,7 +61,7 @@ const InterviewCard = ({
         </div>
 
         <div className="flex flex-row justify-between">
-          <DisplayTechIcons techstack={techstack} />
+          <DisplayTechIcons techStack={techstack} />
           <Button className="btn-primary">
             <Link
               href={

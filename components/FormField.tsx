@@ -12,7 +12,7 @@ interface FormFieldProps<T extends FieldValues> {
   type?: "text" | "email" | "password" | "file";
 }
 
-const FormField = ({
+const FormField = <T extends FieldValues>({
   control,
   name,
   label,
@@ -23,8 +23,8 @@ const FormField = ({
     <div>
       <FieldGroup>
         <Controller
-          name={name}
           control={control}
+          name={name}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor={name} className="label">
