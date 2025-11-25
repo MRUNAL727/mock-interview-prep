@@ -16,6 +16,12 @@ import Link from "next/link";
 import { toast } from "sonner";
 import FormField from "./FormField";
 import { useRouter } from "next/navigation";
+import { auth } from "@/firebase/client";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+import { signIn } from "@/lib/actions/auth.actions";
 
 const authFormaSchema = (type: FormType) => {
   return z.object({
@@ -38,18 +44,65 @@ const AuthForm = ({ type }: { type: FormType }) => {
     },
   });
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
+  async function onSubmit(data: z.infer<typeof formSchema>) {
     try {
       if (type === "sign-up") {
+        const { name, email, password } = data;
+
+        const userCredentials = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password,
+        );
+
+        // const result = await signUp({
+        //   uid: userCredentials.user.uid,
+        //   name: name!,
+        //   email,
+        //   password
+        // })
+
+        const result: any = await fetch("/api/sign-up", {
+          method: "POST",
+          body: JSON.stringify({
+            uid: userCredentials.user.uid,
+            name,
+            email,
+            password,
+          }),
+        });
+
+        if (!result?.success) {
+          toast.error(result?.message || "Failed to create an account.");
+          return;
+        }
+
         toast.success("Account created successefully. Please sign in.");
         router.push("/sign-in");
       } else {
+        const { email, password } = data;
+
+        const userCredentials = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password,
+        );
+
+        const idToken = await userCredentials.user.getIdToken();
+
+        if (!idToken) {
+          toast.error("Failed to sign in.");
+          return;
+        }
+
+        await signIn({ idToken, email });
+
         toast.success("Signed in successfully!");
         router.push("/");
       }
-    } catch (error) {
-      console.log(error);
-      toast.error(`There was an error: ${error}`);
+    } catch (error: any) {
+      console.log(error.message);
+      toast.error(`There was an error: ${error.message}`);
     }
   }
 
