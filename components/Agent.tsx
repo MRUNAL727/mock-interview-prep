@@ -22,14 +22,16 @@ const Agent = ({ userName, userId, type }: AgentProps) => {
   const [callStatus, setCallStatus] = useState<CallStatus>(CallStatus.INACTIVE);
   const [messages, setMessages] = useState<SavedMessage[]>([]);
 
-  const lastMessage = messages[messages.length - 1];
   const router = useRouter();
 
   useEffect(() => {
     const onCallStart = () => setCallStatus(CallStatus.ACTIVE);
-    const onCallEnd = () => setCallStatus(CallStatus.FINISHED);
+    const onCallEnd = () => {
+      setCallStatus(CallStatus.FINISHED);
+    };
 
     const onMessage = (message: Message) => {
+      console.log("Received message: ", message);
       if (message.type === "transcript" && message.transcriptType === "final") {
         const newMessage = { role: message.role, content: message.transcript };
 
@@ -53,6 +55,7 @@ const Agent = ({ userName, userId, type }: AgentProps) => {
     return () => {
       vapi.off("call-start", onCallStart);
       vapi.off("call-end", onCallEnd);
+
       vapi.off("message", onMessage);
       vapi.off("speech-start", onSpeechStart);
       vapi.off("speech-end", onSpeechEnd);
@@ -69,55 +72,20 @@ const Agent = ({ userName, userId, type }: AgentProps) => {
   const handleCall = async () => {
     if (callStatus === CallStatus.INACTIVE) {
       setCallStatus(CallStatus.CONNECTING);
-    }
-    await vapi.start(
-      undefined, // Pass 'undefined' for the 'assistant' argument
-      undefined, // Pass 'undefined' for the 'assistantOverrides' argument
-      undefined, // Pass 'undefined' for the 'squad' argument
-      process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!, // Pass the Workflow ID here (Argument 3)
-      {
-        // Pass workflowOverrides here (Argument 4)
-        variableValues: {
-          username: userName,
-          userid: userId,
+
+      await vapi.start(
+        undefined,
+        undefined,
+        undefined,
+        process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!,
+        {
+          variableValues: {
+            username: userName,
+            userid: userId,
+          },
         },
-      },
-    );
-
-    //  try {
-    //   const response = await fetch('/api/start-call', {
-    //     method: 'POST',
-    //     headers: {
-    //       'Content-Type': 'application/json',
-    //     },
-    //     body: JSON.stringify({
-    //       username: userName, // Use your state variables here
-    //       userId: userId,     // Use your state variables here
-    //     }),
-    //   });
-
-    //   console.log(response)
-
-    //   if (!response.ok) {
-    //     throw new Error('Failed to start Vapi call via backend API');
-    //   }
-
-    //   // 2. Get the session details from your API response
-    //   const callSession = await response.json();
-
-    //   console.log(callSession)
-    //   // 3. The Vapi SDK should automatically pick up the session details
-    //   // You may need to ensure your Vapi client instance is listening correctly.
-    //   // In many Vapi implementations, once the call is initiated on the backend,
-    //   // the web SDK connects automatically if listeners are set up correctly.
-
-    //   // If needed, you can explicitly initiate connection using the returned sessionId
-    //   // await vapi.start({ sessionId: callSession.id }); // Use this if automatic connection fails
-
-    // } catch (error) {
-    //   console.error("Error during call initiation:", error);
-    //   setCallStatus(CallStatus.INACTIVE);
-    // }
+      );
+    }
   };
 
   const handleDisconnect = async () => {
